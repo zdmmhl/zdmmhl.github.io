@@ -1,0 +1,1 @@
+fetch("/analytics/events/pageview", { method: "POST" })
